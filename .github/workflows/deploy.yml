@@ -71,7 +71,7 @@ jobs:
       - name: Build reviewed portfolio
         run: npm run build
       - run: npm run check:links
-      - uses: actions/configure-pages@v5
+      - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
