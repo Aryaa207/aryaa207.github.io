@@ -1,0 +1,33 @@
+---
+import '../styles/globals.css';
+import '../styles/studio.css';
+import { path } from '../lib/paths';
+interface Props { title?: string; description?: string; lens?: string; project?: { title: string; description: string; id: string } }
+const {title='Aryaa Vijay — Aerospace Engineering',description='Aerospace engineering portfolio of Aryaa Vijay. GNC, CFD, and embedded systems. Florida Tech, Class of 2027. Available May 2027.',lens='all',project}=Astro.props;
+const canonical=new URL(Astro.url.pathname,Astro.site);
+const person={"@context":"https://schema.org","@type":"Person",name:"Aryaa Vijay",jobTitle:"Aerospace Engineering Student",url:Astro.site,affiliation:{"@type":"CollegeOrUniversity",name:"Florida Institute of Technology"},sameAs:["https://linkedin.com/in/aryaa-vijay","https://github.com/Aryaa207"]};
+const schema=project?{"@context":"https://schema.org","@type":"CreativeWork",name:project.title,description:project.description,url:canonical,author:{"@type":"Person",name:"Aryaa Vijay"}}:person;
+const ogKey=project?.id??lens;
+---
+<!doctype html>
+<html lang="en" data-lens={lens}>
+<head>
+<meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>{title}</title><meta name="description" content={description}/><link rel="canonical" href={canonical}/>
+<meta name="theme-color" content="#080b10"/><link rel="icon" type="image/svg+xml" href={path('favicon.svg')}/>
+<meta property="og:title" content={title}/><meta property="og:description" content={description}/><meta property="og:type" content="website"/><meta property="og:url" content={canonical}/>
+<meta property="og:image" content={new URL(path(`social/${ogKey}.png`),Astro.site)}/><meta name="twitter:card" content="summary_large_image"/>
+<meta name="referrer" content="strict-origin-when-cross-origin"/>
+<script is:inline type="application/ld+json" set:html={JSON.stringify(schema).replace(/</g, '\\u003c')}/></head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header"><nav class="container nav" aria-label="Main navigation">
+<a class="wordmark" href={path()} aria-label="Aryaa Vijay home"><span class="mark" aria-hidden="true">a<span>v</span></span>Aryaa Vijay<span class="wordmark-sub"> / Aerospace Engineering</span></a>
+<div class="nav-links"><a href={path('#work')}>Work</a><a href={path('#about')}>About</a><a href={path('resume/')}>Résumé</a><a class="nav-contact" href={path('#contact')}>Contact <span aria-hidden="true">↗</span></a></div>
+</nav></header>
+<main id="main"><slot/></main>
+<footer class="container footer"><p>© {new Date().getFullYear()} Aryaa Vijay</p><p>Florida Tech · Aerospace Engineering · 2027</p><a href="#main">Back to top ↑</a></footer>
+<script>
+for(const button of document.querySelectorAll<HTMLButtonElement>('[data-copy-email]')) button.addEventListener('click',async()=>{const status=document.querySelector('[data-copy-status]');try{await navigator.clipboard.writeText('avijay2024@my.fit.edu');if(status)status.textContent='Email copied.';}catch{if(status)status.textContent='Copy this address: avijay2024@my.fit.edu';}});
+</script>
+</body></html>

@@ -1,0 +1,43 @@
+---
+import type { ResumeViewerProps } from '../../types';
+const {src,title}=Astro.props as ResumeViewerProps;
+---
+<pdf-viewer data-src={src} aria-label={title}>
+<div class="pdf-toolbar"><button data-load>Open interactive PDF</button><button data-zoom="out" aria-label="Zoom out" hidden>−</button><span data-zoom-level hidden>100%</span><button data-zoom="in" aria-label="Zoom in" hidden>+</button><span data-page-count></span><a class="text-link" href={src} download>Download PDF ↓</a></div>
+<p class="pdf-status" aria-live="polite">The application résumé is available to view or download. Text is selectable in the interactive viewer.</p><div class="pdf-pages" hidden></div>
+</pdf-viewer>
+<script>
+class PdfViewer extends HTMLElement {
+ connectedCallback(){this.querySelector('button[data-load]')!.addEventListener('click',()=>this.load(),{once:true});}
+ async load(){
+  const status=this.querySelector<HTMLElement>('.pdf-status')!,container=this.querySelector<HTMLElement>('.pdf-pages')!,load=this.querySelector<HTMLButtonElement>('[data-load]')!;
+  load.disabled=true;status.textContent='Loading résumé…';
+  try{
+   const pdfjs=await import('pdfjs-dist');
+   const worker=await import('pdfjs-dist/build/pdf.worker.min.mjs?url');
+   pdfjs.GlobalWorkerOptions.workerSrc=worker.default;
+   const pdf=await pdfjs.getDocument({url:this.dataset.src!}).promise;
+   load.hidden=true;container.hidden=false;
+   this.querySelector('[data-page-count]')!.textContent=`${pdf.numPages} page${pdf.numPages===1?'':'s'}`;
+   this.querySelectorAll<HTMLElement>('[data-zoom], [data-zoom-level]').forEach(el=>el.hidden=false);
+   let zoom=1,version=0;
+   const render=async()=>{const revision=++version;container.replaceChildren();
+    for(let n=1;n<=pdf.numPages;n++){
+     const page=await pdf.getPage(n);if(revision!==version)return;
+     const base=page.getViewport({scale:1}),scale=Math.max(.35,(container.clientWidth-24)/base.width)*zoom,viewport=page.getViewport({scale});
+     const wrap=document.createElement('div');wrap.className='pdf-page';wrap.style.width=`${viewport.width}px`;wrap.style.height=`${viewport.height}px`;wrap.style.setProperty('--scale-factor',String(scale));wrap.style.setProperty('--total-scale-factor',String(scale));
+     const canvas=document.createElement('canvas'),dpr=Math.min(devicePixelRatio,2);canvas.width=viewport.width*dpr;canvas.height=viewport.height*dpr;canvas.style.width=`${viewport.width}px`;canvas.style.height=`${viewport.height}px`;canvas.setAttribute('aria-label',`Résumé page ${n}`);
+     const text=document.createElement('div');text.className='textLayer';wrap.append(canvas,text);container.append(wrap);
+     await page.render({canvas,viewport,transform:[dpr,0,0,dpr,0,0]}).promise;
+     if(revision!==version)return;
+     await new pdfjs.TextLayer({textContentSource:await page.getTextContent(),container:text,viewport}).render();
+    }
+    status.textContent='Résumé loaded. Select text or use your browser’s Find command.';
+   };
+   this.querySelectorAll<HTMLButtonElement>('[data-zoom]').forEach(b=>b.addEventListener('click',()=>{zoom=Math.max(.75,Math.min(2,zoom+(b.dataset.zoom==='in'?.25:-.25)));this.querySelector('[data-zoom-level]')!.textContent=`${Math.round(zoom*100)}%`;render().catch(()=>status.textContent='Could not render this zoom level. Download the PDF to view it.');}));
+   await render();
+  }catch{status.textContent='The PDF viewer could not load. You can still download the résumé.';load.hidden=true;}
+ }
+}
+customElements.define('pdf-viewer',PdfViewer);
+</script>

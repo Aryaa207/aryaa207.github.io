@@ -1,0 +1,24 @@
+---
+import { path } from '../../lib/paths';
+interface Props { src?: string; label?: string; size?: string }
+const {src='sard-drone',label='S.A.R.D.',size='0.80'}=Astro.props;
+---
+<model-viewer class="model-shell" data-src={path(`models/${src}.glb`)} data-size={size}>
+<div class="model-viewport" tabindex="0" role="region" aria-label={`Interactive ${label} visualization model`}><button class="button primary" data-load>Explore 3D model · {size} MB</button></div>
+<div class="viewer-toolbar" hidden>
+{['Iso','Front','Top','Right'].map(v=><button data-view={v}>{v}</button>)}
+<button data-wire aria-pressed="false">Wireframe</button><button data-xray aria-pressed="false">X-ray</button><button data-edges aria-pressed="false">Edges</button><button data-rotate aria-pressed="false">Rotate</button><button data-reset>Reset</button><button data-fullscreen>Fullscreen</button>
+<label>Section <select data-section aria-label="Section plane"><option value="none">Off</option><option>X</option><option>Y</option><option>Z</option></select></label><input data-section-offset type="range" min="-1" max="1" step="0.01" value="0" aria-label="Section plane position"/>
+</div><p class="model-status" aria-live="polite">Recovered visualization mesh. Its scale is not a verified engineering dimension.</p><p class="viewer-help">Drag to orbit · right-drag to pan · scroll to zoom. Keyboard: arrows orbit, +/− zoom, R reset, W wireframe, X x-ray, F fullscreen.</p>
+</model-viewer>
+<script>
+class ModelViewer extends HTMLElement {
+ connectedCallback(){this.querySelector('[data-load]')!.addEventListener('click',()=>this.load(),{once:true});}
+ async load(){
+  const status=this.querySelector<HTMLElement>('.model-status')!,viewport=this.querySelector<HTMLElement>('.model-viewport')!,button=this.querySelector<HTMLButtonElement>('[data-load]')!;button.disabled=true;status.textContent='Loading 3D viewer…';
+  try{const {mountModel}=await import('../../lib/model-viewer');await mountModel(this);}
+  catch{status.textContent='3D rendering is unavailable. The project description and hardware specifications remain available.';button.hidden=true;viewport.style.height='100px';}
+ }
+}
+customElements.define('model-viewer',ModelViewer);
+</script>

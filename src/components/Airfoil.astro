@@ -1,0 +1,33 @@
+---
+import { defaults, rk4, surface, metrics } from '../lib/physics/joukowski';
+const scale=65, ox=350, oy=210;
+const initial=metrics(defaults);
+const foil=surface(defaults).map((p,i)=>`${i?'L':'M'}${ox+p.re*scale},${oy-p.im*scale}`).join(' ')+' Z';
+const curves=Array.from({length:27},(_,i)=>{let p={re:-5.5,im:(i-13)*.2};let d='';for(let k=0;k<180;k++){d+=`${k?'L':'M'}${(ox+p.re*scale).toFixed(1)},${(oy-p.im*scale).toFixed(1)} `;const n=rk4(p,.065,defaults);if(!n)break;p=n;}return d;});
+---
+<airfoil-lab class="airfoil-lab">
+<div class="lab-top"><span><span class="status-dot"></span> THE FLOW LAB</span><span>01 / POTENTIAL FLOW</span></div>
+<div class="flow-viewport">
+<svg class="flow-fallback" viewBox="0 0 700 420" role="img" aria-label="Mathematical streamlines around a Joukowski airfoil"><defs><linearGradient id="foil-fill" x2="0" y2="1"><stop stop-color="#eaf5ff"/><stop offset="1" stop-color="#8396ad"/></linearGradient></defs>{curves.map(d=><path d={d} fill="none" stroke="#5687ad" stroke-width="1" opacity=".6"/>)}<path d={foil} fill="url(#foil-fill)" stroke="#edf6ff" stroke-width="1.2"/></svg>
+<canvas aria-label="Interactive potential-flow streamlines" role="img" hidden></canvas>
+<div class="flow-caption"><span>JOUKOWSKI AIRFOIL</span><span>ζ → z</span></div>
+</div>
+<div class="lab-controls"><label for="alpha">Angle of attack <output id="alpha-value">5°</output></label><input id="alpha" type="range" min="-10" max="15" value="5" step="0.5" aria-describedby="flow-disclosure"/><div class="flow-readouts"><span>C<sub>L</sub> <strong data-cl>{initial.cl.toFixed(2)}</strong></span><span>C<sub>p,min</sub> <strong data-cp>{initial.cpMin.toFixed(2)}</strong></span><span class="unit">Dimensionless</span></div></div>
+<p id="flow-disclosure" class="lab-note">Joukowski transform · angle-of-attack sweep.<br/>Inviscid potential flow · no viscosity or stall.</p>
+</airfoil-lab>
+<script>
+import { defaults, metrics, rk4, surface } from '../lib/physics/joukowski';
+class AirfoilLab extends HTMLElement {
+ connectedCallback(){
+  const canvas=this.querySelector('canvas')!, fallback=this.querySelector<SVGElement>('.flow-fallback')!, ctx=canvas.getContext('2d'); if(!ctx)return;
+  const input=this.querySelector<HTMLInputElement>('input')!;
+  const draw=()=>{const w=this.clientWidth,h=w*.4,dpr=Math.min(devicePixelRatio,2);canvas.width=w*dpr;canvas.height=h*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);const p={...defaults,alpha:Number(input.value)},s=w/10.8,ox=w/2,oy=h*.52;ctx.clearRect(0,0,w,h);
+   for(let i=-14;i<=14;i++){let point={re:-5.5,im:i*.2};ctx.beginPath();ctx.strokeStyle=i%3===0?'#7ba9ce':'#385d82';ctx.lineWidth=i%3===0?1:.65;for(let k=0;k<195;k++){const x=ox+point.re*s,y=oy-point.im*s;if(k)ctx.lineTo(x,y);else ctx.moveTo(x,y);const next=rk4(point,.062,p);if(!next)break;point=next;}ctx.stroke();}
+   const shape=surface(p);ctx.beginPath();shape.forEach((z,i)=>i?ctx.lineTo(ox+z.re*s,oy-z.im*s):ctx.moveTo(ox+z.re*s,oy-z.im*s));ctx.closePath();const fill=ctx.createLinearGradient(0,oy-30,0,oy+25);fill.addColorStop(0,'#ffffff');fill.addColorStop(.55,'#c5d6e6');fill.addColorStop(1,'#73899f');ctx.fillStyle=fill;ctx.shadowBlur=28;ctx.shadowColor='#b1d5ff55';ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle='#e6f3ff';ctx.stroke();
+   const m=metrics(p);this.querySelector('output')!.textContent=`${p.alpha}°`;this.querySelector('[data-cl]')!.textContent=m.cl.toFixed(2);this.querySelector('[data-cp]')!.textContent=m.cpMin.toFixed(2);canvas.hidden=false;fallback.style.display='none';
+  };
+  input.addEventListener('input',draw);const resize=new ResizeObserver(draw);resize.observe(this);draw();
+ }
+}
+customElements.define('airfoil-lab',AirfoilLab);
+</script>

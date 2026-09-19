@@ -1,0 +1,34 @@
+---
+import { path } from '../../lib/paths';
+import { sardComponents } from '../../lib/sard-components';
+import Video from '../media/Video.astro';
+import '../../styles/sard.css';
+---
+<section class="sard-experience" data-sard data-model={path('models/sard-drone.glb')} data-mode="slicer" aria-labelledby="sard-title">
+  <header class="sard-heading"><div><p class="eyebrow">INTERACTIVE / S.A.R.D.</p><h2 id="sard-title">Systems & sensor acquisition.</h2></div><p>Component photographs, a sectioned airframe,<br/>and an interactive attitude demonstration.</p></header>
+  <div class="sard-track"><div class="sard-sticky">
+    <div class="sard-tabs" role="tablist" aria-label="S.A.R.D. interactive demonstrations"><button id="slicer-tab" role="tab" aria-selected="true" aria-controls="slicer-panel" data-mode-button="slicer">Component slicer</button><button id="imu-tab" role="tab" aria-selected="false" aria-controls="imu-panel" tabindex="-1" data-mode-button="imu">IMU & sensor acquisition</button></div>
+    <div id="slicer-panel" role="tabpanel" aria-labelledby="slicer-tab" class="slicer-panel">
+      <div class="slicer-stage">
+        <div class="slicer-viewport" aria-label="Sectioned S.A.R.D. airframe"><div class="slicer-grid"></div><div class="slicer-label"><span class="status-dot"></span> AIRFRAME SECTION <span data-depth>00%</span></div><div class="slicer-canvas" data-slicer-canvas></div><span class="slicer-marker" data-marker hidden>01</span><p class="slicer-status" data-slicer-status role="status">3D airframe loads when this section enters view.</p><div class="slicer-orientation" aria-hidden="true">Y ↑ <span>X ↗</span> Z →</div></div>
+        <div class="component-stack">{sardComponents.map((c,i)=><article class="component-detail" data-component={i} hidden={i!==0}><div class="component-photo"><img src={path(`components/${c.image}.webp`)} alt={c.note} width="600" height="420" loading="lazy"/></div><div class="component-copy"><p class="eyebrow">{c.group}</p><h3>{c.name}</h3><p class="component-spec">{c.spec}</p><p class="component-description">{c.text}</p></div></article>)}</div>
+      </div>
+      <div class="slicer-controls"><div class="slicer-control-label"><label for="slicer-depth">Section depth</label><span>Scroll to inspect · or use the slider</span></div><input id="slicer-depth" type="range" min="0" max="100" step="0.1" value="0" aria-label="Section depth"/><div class="component-steps" aria-label="Select a component">{sardComponents.map((c,i)=><button data-component-step={i} aria-label={`Show ${c.name}`} aria-pressed={i===0}><span>0{i+1}</span><span class="step-name">{c.name.replace(' controller','').replace(' camera','').replace(' battery','')}</span></button>)}</div></div>
+      <p class="slicer-note">Section plane and component markers are schematic. Photographs identify the project hardware.</p>
+    </div>
+    <div id="imu-panel" role="tabpanel" aria-labelledby="imu-tab" hidden>
+      <div class="imu-intro"><div><p class="eyebrow">LSM9DS1 / ATTITUDE ESTIMATION</p><h3>Inertial sensor dashboard.</h3><p>Generated motion and noisy sensor inputs, adapted from my original browser simulation. Roll and pitch use angle-and-bias Kalman filters; yaw uses gyro integration.</p></div><span class="simulation-badge">SIMULATED INPUTS</span></div>
+      <div class="imu-dashboard" data-imu>
+        <div class="imu-view"><div data-imu-canvas class="imu-canvas"></div><div class="imu-start"><p>Roll · pitch · yaw</p><button class="button primary" data-imu-start>Start IMU simulation</button></div><p class="imu-render-status" role="status" data-imu-status>Simulation paused. No hardware connection.</p></div>
+        <div class="imu-data"><div class="imu-readouts"><div><span>Roll</span><strong data-roll>0.0°</strong></div><div><span>Pitch</span><strong data-pitch>0.0°</strong></div><div><span>Yaw · integrated</span><strong data-yaw>0.0°</strong></div></div><div class="imu-chart"><h4>Roll / pitch <span>degrees</span></h4><canvas data-angle-chart role="img" aria-label="Rolling plot of raw and filtered roll and pitch. Current estimates appear above."></canvas><p><i class="legend-roll"></i> Roll <i class="legend-pitch"></i> Pitch <span>Faint: raw · Solid: filtered</span></p></div><div class="imu-chart"><h4>Acceleration <span>m/s²</span></h4><canvas data-accel-chart role="img" aria-label="Simulated acceleration on X, Y and Z axes. Current values appear below."></canvas><p><i class="legend-roll"></i> X <i class="legend-pitch"></i> Y <i class="legend-z"></i> Z</p></div><p class="imu-accel" data-accel>X 0.00 · Y 0.00 · Z 9.81 m/s²</p></div>
+      </div>
+      <div class="imu-controls"><label for="imu-motion">Motion</label><select id="imu-motion"><option value="combined">Combined axes</option><option value="roll">Roll</option><option value="pitch">Pitch</option><option value="yaw">Yaw</option></select><button data-imu-pause disabled>Pause</button><button data-imu-reset disabled>Reset</button><button data-imu-step disabled>Step</button><span data-imu-time>0.0 s</span></div>
+      <p class="imu-note">Illustrative signals, not recorded flight telemetry. Angles are in degrees; angular rates are in degrees per second. Yaw is uncorrected by magnetometer data.</p>
+      <div class="acquisition-pipeline"><h3>Hardware acquisition</h3><ol><li><span>01</span><strong>LSM9DS1 → I²C</strong><p>Acceleration and angular rate read by Raspberry Pi.</p></li><li><span>02</span><strong>Bias & attitude</strong><p>100 stationary samples at startup; separate roll and pitch filters.</p></li><li><span>03</span><strong>WebSocket → browser</strong><p>Python sends sensor values and attitude estimates to the dashboard.</p></li></ol></div>
+      <Video name="sensor-bench" title="Sensor and payload bench" description="Original hardware recording showing the Raspberry Pi, sensor wiring, camera mount, and an on-screen orientation visualization."/>
+    </div>
+  </div></div>
+  <p class="sard-source">Adapted from my <a href="https://github.com/Aryaa207/sard-assets">S.A.R.D. repository ↗</a> · <a href="https://github.com/Aryaa207/sard-assets/blob/main/AppV6.py">Hardware acquisition source ↗</a></p>
+  <noscript><p>Interactive controls require JavaScript. Component images and the original sensor demonstration are available in the linked repository.</p></noscript>
+</section>
+<script>import { initSard } from '../../lib/sard-experience';document.querySelectorAll<HTMLElement>('[data-sard]').forEach(initSard);</script>

@@ -1,0 +1,5 @@
+---
+interface Props { field: string }
+const {field}=Astro.props;
+---
+{import.meta.env.DEV&&<span class="missing-field" data-missing-field={field}>{field}</span>}

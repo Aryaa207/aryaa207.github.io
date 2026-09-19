@@ -1,0 +1,7 @@
+---
+import Site from '../../layouts/Site.astro';
+import HomeContent from '../../components/HomeContent.astro';
+export function getStaticPaths(){return ['gnc','cfd','embedded'].map(lens=>({params:{lens}}));}
+const {lens}=Astro.params;
+---
+<Site title={`Aryaa Vijay — ${lens?.toUpperCase()} portfolio`} lens={lens}><HomeContent/></Site>

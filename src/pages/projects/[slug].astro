@@ -1,0 +1,27 @@
+---
+import { getCollection, render } from 'astro:content';
+import Site from '../../layouts/Site.astro';
+import Gallery from '../../components/media/Gallery.astro';
+import Missing from '../../components/Missing.astro';
+import car from '../../assets/kia-cfd.png';
+import ModelViewer from '../../components/three/ModelViewer.astro';
+import { path } from '../../lib/paths';
+import { projectMedia, models } from '../../lib/evidence';
+import { projectBriefs } from '../../lib/project-briefs';
+import Video from '../../components/media/Video.astro';
+import SardExperience from '../../components/project/SardExperience.astro';
+export async function getStaticPaths(){const projects=(await getCollection('projects')).sort((a,b)=>a.data.order-b.data.order);return projects.map((project,i)=>({params:{slug:project.id},props:{project,previous:projects[(i-1+projects.length)%projects.length],next:projects[(i+1)%projects.length]}}));}
+const {project,previous,next}=Astro.props;const {Content}=await render(project);const p=project.data,brief=projectBriefs[project.id],hasImages=Boolean(projectMedia[project.id]||p.visual==='car');
+---
+<Site title={`${p.title} — Aryaa Vijay`} description={p.summary} project={{title:p.title,description:p.summary,id:project.id}}>
+<div class="container"><header class="page-hero case-hero"><a class="back-link" href={path('#work')}>← Projects</a><p class="eyebrow">{p.lenses.map(l=>l.toUpperCase()).join(' / ')} · {brief.evidence}</p><h1>{p.title}</h1><p class="lede">{p.summary}</p><dl class="project-meta"><div><dt>My role</dt><dd>{p.role}</dd></div><div><dt>Period</dt><dd>{p.period}</dd></div><div><dt>Tools</dt><dd>{p.tools.slice(0,3).join(' · ')}</dd></div></dl></header>
+<section class="case-brief" aria-label="Project summary"><div><span class="brief-index">01 / OWNERSHIP</span><h2>My contribution</h2><p>{brief.contribution}</p></div><div><span class="brief-index">02 / APPROACH</span><h2>Engineering method</h2><p>{brief.method}</p></div><div><span class="brief-index">03 / EVIDENCE</span><h2>Outcome & scope</h2><p>{brief.outcome}</p></div></section>
+<nav class="case-links" aria-label="Project sections"><a href="#project-analysis">Technical write-up ↓</a>{hasImages&&<a href="#project-evidence">Images & results ↓</a>}{project.id==='sard-drone'?<><a href="#project-demo">Camera recording ↓</a><a href="#sensor-bench">Sensor bench ↓</a><a href="#sard-title">Slicer & IMU ↓</a></>:models[project.id]&&<a href="#project-model">3D geometry ↓</a>}{brief.links?.map(link=><a href={link.href}>{link.label} ↗</a>)}</nav>
+<div class="project-body" id="project-analysis"><article class="prose"><Content/>
+{import.meta.env.DEV&&p.missing.length>0&&<aside class="missing"><strong>Content review — visible in development only</strong><ul>{p.missing.map(m=><li><Missing field={m}/></li>)}</ul></aside>}
+<p class="source-note">Sources: {p.source}.</p></article><aside class="spec-card"><h2>Project details</h2><dl>{p.specs.map(s=><div><dt>{s.label}</dt><dd>{s.value}</dd></div>)}</dl><div class="tag-list">{p.tools.map(t=><span class="tag">{t}</span>)}</div><a class="text-link" href="mailto:avijay2024@my.fit.edu">Discuss this project ↗</a><a class="text-link case-resume" href={path('documents/aryaa-vijay-resume.pdf')} download>Download résumé ↓</a></aside></div>
+{hasImages&&<section class="case-evidence" id="project-evidence" aria-labelledby="evidence-title"><div class="section-heading"><div><p class="eyebrow">PROJECT DOCUMENTATION</p><h2 id="evidence-title">{project.id==='sard-drone'?'Hardware & integration.':'Results & artifacts.'}</h2></div><p>Original photographs and project exports.<br/>Select an image to inspect the details.</p></div>{projectMedia[project.id]&&<Gallery items={projectMedia[project.id]}/>}{p.visual==='car'&&<Gallery items={[{src:car,alt:'Kia K4 surface geometry',caption:'Vehicle surface-geometry rendering; a geometry reference rather than a CFD result.'}]}/>}</section>}
+{project.id==='sard-drone'&&<><section id="project-demo" class="case-video" aria-labelledby="camera-title"><p class="eyebrow">RECORDED DEMONSTRATION</p><h2 id="camera-title">Computer-vision interface.</h2><Video name="vision-demo" title="ARGUS interface recording" description="Screen recording of the vision interface following a face. Interface annotations are demonstration readouts, not independently verified measurements."/></section><SardExperience/></>}
+{project.id!=='sard-drone'&&models[project.id]&&<section id="project-model" class="case-model"><p class="eyebrow">INTERACTIVE GEOMETRY</p><h2>Model inspection.</h2><ModelViewer {...models[project.id]}/></section>}
+<nav class="next-prev" aria-label="More projects"><a href={path(`projects/${previous.id}/`)}>← {previous.data.title}</a><a href={path(`projects/${next.id}/`)}>{next.data.title} →</a></nav></div>
+</Site>
