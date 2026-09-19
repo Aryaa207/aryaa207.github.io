@@ -17,10 +17,13 @@ export async function mountSlicer(root:HTMLElement){
  const section=new THREE.Group();section.position.copy(center);scene.add(section);
  const sheet=new THREE.Mesh(new THREE.PlaneGeometry(size.x*1.12,size.z*1.12),new THREE.MeshBasicMaterial({color:0x98dff4,transparent:true,opacity:.06,side:THREE.DoubleSide,depthWrite:false}));sheet.rotation.x=-Math.PI/2;section.add(sheet);
  const border=new THREE.LineSegments(new THREE.EdgesGeometry(sheet.geometry),new THREE.LineBasicMaterial({color:0xa8e5f1,transparent:true,opacity:.6}));border.rotation.x=-Math.PI/2;section.add(border);
- let target=0,current=0,index=0,active=true,visible=false,frame=0,disposed=false;
+ let target=0,current=0,index=0,active=true,visible=false,frame=0,disposed=false,lastDraw=0;
  const reduced=matchMedia('(prefers-reduced-motion: reduce)');
  function fit(){const w=host.clientWidth,h=host.clientHeight;if(!w||!h)return;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h);const radius=size.length()*.5;const angle=Math.min(camera.fov*Math.PI/360,Math.atan(Math.tan(camera.fov*Math.PI/360)*camera.aspect));const distance=radius/Math.sin(angle)*1.03;camera.position.copy(center).add(new THREE.Vector3(.9,.48,1).normalize().multiplyScalar(distance));camera.lookAt(center);for(let i=0;i<3;i++){camera.updateMatrixWorld();let extent=0;for(const x of [box.min.x,box.max.x])for(const y of [box.min.y,box.max.y])for(const z of [box.min.z,box.max.z]){const p=new THREE.Vector3(x,y,z).project(camera);extent=Math.max(extent,Math.abs(p.x),Math.abs(p.y));}camera.position.sub(center).multiplyScalar(Math.max(.65,Math.min(1.4,extent/.79))).add(center);camera.lookAt(center);}camera.updateMatrixWorld();requestDraw();}
- function draw(){frame=0;if(disposed||!active||!visible||document.hidden)return;current=reduced.matches?target:current+(target-current)*.11;if(Math.abs(target-current)<.0003)current=target;
+ function draw(now:number){frame=0;if(disposed||!active||!visible||document.hidden)return;
+   // Use elapsed time so software rendering and low frame rates do not prolong transitions.
+   const elapsed=lastDraw?Math.min(1000,now-lastDraw):1000/60;lastDraw=now;
+   current=reduced.matches?target:current+(target-current)*(1-Math.exp(-elapsed/143));if(Math.abs(target-current)<.0003)current=target;
    const y=box.max.y-current*size.y*.92;clip.constant=y;section.position.y=y;
    const p=sardComponents[index].position;const point=new THREE.Vector3(p[0],y+.012,p[2]).project(camera);marker.style.left=`${(point.x*.5+.5)*host.clientWidth}px`;marker.style.top=`${(-point.y*.5+.5)*host.clientHeight}px`;marker.textContent=`0${index+1}`;marker.hidden=false;
    renderer.render(scene,camera);root.dataset.slicerProgress=current.toFixed(3);if(current!==target)requestDraw();
