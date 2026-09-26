@@ -38,7 +38,7 @@
     "@types/node": "26.6.2",
     "@types/three": "0.186.0",
     "eslint": "10.11.0",
-    "eslint-plugin-astro": "2.1.1",
+    "eslint-plugin-astro": "3.2.1",
     "lighthouse": "13.5.0",
     "typescript": "6.0.3",
     "typescript-eslint": "8.70.0",
